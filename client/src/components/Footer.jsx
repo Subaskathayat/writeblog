@@ -9,7 +9,7 @@ export default function Footer() {
         >
           <div className="stack" style={{ gap: 8, maxWidth: 320 }}>
             <div className="nav-logo" style={{ color: '#fff' }}>
-              Inkwell
+              WriteBlog
             </div>
             <p style={{ color: 'var(--muted)', fontSize: 14 }}>
               A clean, modern place to write, publish, and discover blogs.
@@ -24,7 +24,7 @@ export default function Footer() {
         </div>
         <hr className="divider" style={{ margin: '32px 0 16px', opacity: 0.2 }} />
         <p style={{ color: 'var(--muted)', fontSize: 12 }}>
-          © {new Date().getFullYear()} Inkwell. Built as a demo blogging platform.
+          © {new Date().getFullYear()} WriteBlog. Built as a demo blogging platform.
         </p>
       </div>
     </footer>

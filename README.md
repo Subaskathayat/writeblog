@@ -1,4 +1,4 @@
-# Inkwell — A Dynamic Blogging Platform
+# WriteBlog — A Dynamic Blogging Platform
 
 A full-stack, multi-user blogging platform (like a small Medium). Users sign up,
 write and publish blogs, and read, like, and comment on everyone else's posts.

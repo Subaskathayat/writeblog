@@ -20,7 +20,7 @@ export default function Navbar() {
     <header className="nav">
       <div className="container nav-inner">
         <Link to="/" className="nav-logo" onClick={close}>
-          Inkwell
+          WriteBlog
         </Link>
 
         <button
