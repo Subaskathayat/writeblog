@@ -11,13 +11,18 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Normalize error messages to a single `.message` string for the UI.
+// Normalize error messages to a single `.message` string for the UI, while
+// preserving the raw response payload on `.data` for callers that need flags
+// (e.g. `needsVerification`).
 api.interceptors.response.use(
   (res) => res,
   (err) => {
     const message =
       err.response?.data?.message || err.message || 'Something went wrong';
-    return Promise.reject(new Error(message));
+    const error = new Error(message);
+    error.data = err.response?.data;
+    error.status = err.response?.status;
+    return Promise.reject(error);
   }
 );
 

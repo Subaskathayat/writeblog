@@ -1,5 +1,9 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
+import { generateRawToken, hashToken } from '../utils/tokens.js';
+
+const VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+const RESET_TTL_MS = 60 * 60 * 1000; // 1 hour
 
 const userSchema = new mongoose.Schema(
   {
@@ -27,6 +31,11 @@ const userSchema = new mongoose.Schema(
     bio: { type: String, default: '', maxlength: 500 },
     avatar: { type: String, default: '' },
     role: { type: String, enum: ['user', 'admin'], default: 'user' },
+    isVerified: { type: Boolean, default: false },
+    verificationToken: { type: String, select: false },
+    verificationExpires: { type: Date, select: false },
+    resetPasswordToken: { type: String, select: false },
+    resetPasswordExpires: { type: Date, select: false },
   },
   { timestamps: true }
 );
@@ -40,6 +49,22 @@ userSchema.pre('save', async function (next) {
 
 userSchema.methods.matchPassword = function (entered) {
   return bcrypt.compare(entered, this.password);
+};
+
+// Create a one-time token: store the hash + expiry on the document, return the
+// raw token to email to the user. Caller is responsible for saving.
+userSchema.methods.createVerificationToken = function () {
+  const raw = generateRawToken();
+  this.verificationToken = hashToken(raw);
+  this.verificationExpires = new Date(Date.now() + VERIFICATION_TTL_MS);
+  return raw;
+};
+
+userSchema.methods.createPasswordResetToken = function () {
+  const raw = generateRawToken();
+  this.resetPasswordToken = hashToken(raw);
+  this.resetPasswordExpires = new Date(Date.now() + RESET_TTL_MS);
+  return raw;
 };
 
 const User = mongoose.model('User', userSchema);

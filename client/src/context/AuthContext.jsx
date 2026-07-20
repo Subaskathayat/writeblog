@@ -35,9 +35,30 @@ export function AuthProvider({ children }) {
   };
 
   const signup = async (username, email, password) => {
+    // No auto-login: the account must be verified via email first.
     const { data } = await api.post('/auth/signup', { username, email, password });
+    return data; // { message, email }
+  };
+
+  const verifyEmail = async (token) => {
+    const { data } = await api.post('/auth/verify-email', { token });
     persist(data.token, data.user);
     return data.user;
+  };
+
+  const resendVerification = async (email) => {
+    const { data } = await api.post('/auth/resend-verification', { email });
+    return data.message;
+  };
+
+  const forgotPassword = async (email) => {
+    const { data } = await api.post('/auth/forgot-password', { email });
+    return data.message;
+  };
+
+  const resetPassword = async (token, password) => {
+    const { data } = await api.post('/auth/reset-password', { token, password });
+    return data.message;
   };
 
   const logout = () => {
@@ -49,7 +70,18 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, login, signup, logout, updateUser }}
+      value={{
+        user,
+        loading,
+        login,
+        signup,
+        logout,
+        updateUser,
+        verifyEmail,
+        resendVerification,
+        forgotPassword,
+        resetPassword,
+      }}
     >
       {children}
     </AuthContext.Provider>

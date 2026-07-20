@@ -11,6 +11,10 @@ import { notFound, errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
 
+// Required so express-rate-limit sees the real client IP behind a host proxy
+// (Render, Vercel, etc.) rather than the proxy's address.
+app.set('trust proxy', 1);
+
 app.use(cors({ origin: process.env.CLIENT_URL || '*' }));
 app.use(express.json({ limit: '2mb' }));
 

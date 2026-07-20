@@ -1,8 +1,18 @@
 import express from 'express';
 import { body } from 'express-validator';
-import { signup, login, getMe, updateProfile } from '../controllers/authController.js';
+import {
+  signup,
+  login,
+  getMe,
+  updateProfile,
+  verifyEmail,
+  resendVerification,
+  forgotPassword,
+  resetPassword,
+} from '../controllers/authController.js';
 import { protect } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
+import { sensitiveLimiter, loginLimiter } from '../middleware/rateLimit.js';
 
 const router = express.Router();
 
@@ -19,12 +29,47 @@ router.post(
 
 router.post(
   '/login',
+  loginLimiter,
   [
     body('email').isEmail().withMessage('A valid email is required').normalizeEmail(),
     body('password').notEmpty().withMessage('Password is required'),
   ],
   validate,
   login
+);
+
+router.post(
+  '/verify-email',
+  [body('token').notEmpty().withMessage('Verification token is required')],
+  validate,
+  verifyEmail
+);
+
+router.post(
+  '/resend-verification',
+  sensitiveLimiter,
+  [body('email').isEmail().withMessage('A valid email is required').normalizeEmail()],
+  validate,
+  resendVerification
+);
+
+router.post(
+  '/forgot-password',
+  sensitiveLimiter,
+  [body('email').isEmail().withMessage('A valid email is required').normalizeEmail()],
+  validate,
+  forgotPassword
+);
+
+router.post(
+  '/reset-password',
+  sensitiveLimiter,
+  [
+    body('token').notEmpty().withMessage('Reset token is required'),
+    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+  ],
+  validate,
+  resetPassword
 );
 
 router.get('/me', protect, getMe);

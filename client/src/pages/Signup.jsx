@@ -1,16 +1,16 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 
 export default function Signup() {
   const { signup } = useAuth();
   const toast = useToast();
-  const navigate = useNavigate();
 
   const [form, setForm] = useState({ username: '', email: '', password: '', confirm: '' });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [sentTo, setSentTo] = useState('');
 
   const validate = () => {
     const e = {};
@@ -27,9 +27,9 @@ export default function Signup() {
     if (!validate()) return;
     setLoading(true);
     try {
-      await signup(form.username.trim(), form.email, form.password);
-      toast.success('Account created!');
-      navigate('/dashboard', { replace: true });
+      const data = await signup(form.username.trim(), form.email, form.password);
+      setSentTo(data.email || form.email);
+      toast.success('Account created! Check your email.');
     } catch (err) {
       setErrors({ form: err.message });
     } finally {
@@ -38,6 +38,27 @@ export default function Signup() {
   };
 
   const field = (name) => (form[name] !== undefined ? form[name] : '');
+
+  if (sentTo) {
+    return (
+      <section className="section">
+        <div className="container-narrow" style={{ maxWidth: 460 }}>
+          <h1 className="t-card-heading">Check your inbox</h1>
+          <div className="card card-pad mt-xl" style={{ borderRadius: 'var(--r-lg)' }}>
+            <p className="text-muted">
+              We sent a verification link to <strong>{sentTo}</strong>. Click the link in
+              that email to activate your account, then log in. The link expires in 24 hours.
+            </p>
+            <p className="text-muted mt-lg" style={{ textAlign: 'center' }}>
+              <Link to="/login" style={{ color: 'var(--action-blue)' }}>
+                Go to log in
+              </Link>
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="section">
