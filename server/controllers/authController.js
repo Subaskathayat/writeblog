@@ -1,7 +1,9 @@
 import User from '../models/User.js';
+import RefreshToken from '../models/RefreshToken.js';
 import { generateToken } from '../utils/generateToken.js';
 import { cleanText } from '../utils/sanitize.js';
 import { hashToken } from '../utils/tokens.js';
+import { issueRefreshToken, clearRefreshCookie, REFRESH_COOKIE } from '../utils/refreshCookie.js';
 import { sendVerificationEmail, sendPasswordResetEmail } from '../utils/email.js';
 
 const publicUser = (u) => ({
@@ -56,6 +58,7 @@ export const login = async (req, res) => {
       email: user.email,
     });
   }
+  await issueRefreshToken(res, user);
   res.json({ token: generateToken(user._id), user: publicUser(user) });
 };
 
@@ -77,6 +80,7 @@ export const verifyEmail = async (req, res) => {
   await user.save();
 
   // Log the user in on successful verification.
+  await issueRefreshToken(res, user);
   res.json({ token: generateToken(user._id), user: publicUser(user) });
 };
 
@@ -132,6 +136,49 @@ export const resetPassword = async (req, res) => {
   await user.save();
 
   res.json({ message: 'Password reset successful. You can now log in.' });
+};
+
+// POST /api/auth/refresh
+// Reads the HttpOnly refresh cookie, validates it, rotates it (old token is
+// deleted and a fresh one issued), and returns a new access token.
+export const refresh = async (req, res) => {
+  const raw = req.cookies?.[REFRESH_COOKIE];
+  if (!raw) {
+    return res.status(401).json({ message: 'No refresh token' });
+  }
+
+  const stored = await RefreshToken.findOne({
+    tokenHash: hashToken(raw),
+    expiresAt: { $gt: new Date() },
+  });
+  if (!stored) {
+    clearRefreshCookie(res);
+    return res.status(401).json({ message: 'Invalid or expired refresh token' });
+  }
+
+  const user = await User.findById(stored.user);
+  if (!user) {
+    await stored.deleteOne();
+    clearRefreshCookie(res);
+    return res.status(401).json({ message: 'User no longer exists' });
+  }
+
+  // Rotate: invalidate the used token and issue a fresh one.
+  await stored.deleteOne();
+  await issueRefreshToken(res, user);
+  res.json({ token: generateToken(user._id) });
+};
+
+// POST /api/auth/logout
+// Invalidates the current refresh-token session and clears the cookie.
+// Idempotent: succeeds even when no cookie is present.
+export const logout = async (req, res) => {
+  const raw = req.cookies?.[REFRESH_COOKIE];
+  if (raw) {
+    await RefreshToken.deleteOne({ tokenHash: hashToken(raw) });
+  }
+  clearRefreshCookie(res);
+  res.json({ message: 'Logged out' });
 };
 
 // GET /api/auth/me

@@ -61,7 +61,13 @@ export function AuthProvider({ children }) {
     return data.message;
   };
 
-  const logout = () => {
+  const logout = async () => {
+    // Best-effort server-side invalidation of the refresh token.
+    try {
+      await api.post('/auth/logout');
+    } catch {
+      // Ignore network/errors — clear local state regardless.
+    }
     localStorage.removeItem('token');
     setUser(null);
   };

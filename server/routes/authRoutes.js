@@ -9,15 +9,23 @@ import {
   resendVerification,
   forgotPassword,
   resetPassword,
+  refresh,
+  logout,
 } from '../controllers/authController.js';
 import { protect } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
-import { sensitiveLimiter, loginLimiter } from '../middleware/rateLimit.js';
+import {
+  sensitiveLimiter,
+  loginLimiter,
+  signupLimiter,
+  refreshLimiter,
+} from '../middleware/rateLimit.js';
 
 const router = express.Router();
 
 router.post(
   '/signup',
+  signupLimiter,
   [
     body('username').trim().isLength({ min: 2, max: 40 }).withMessage('Username must be 2-40 characters'),
     body('email').isEmail().withMessage('A valid email is required').normalizeEmail(),
@@ -71,6 +79,9 @@ router.post(
   validate,
   resetPassword
 );
+
+router.post('/refresh', refreshLimiter, refresh);
+router.post('/logout', logout);
 
 router.get('/me', protect, getMe);
 router.put('/profile', protect, updateProfile);

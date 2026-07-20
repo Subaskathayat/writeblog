@@ -19,3 +19,22 @@ export const loginLimiter = rateLimit({
   legacyHeaders: false,
   message,
 });
+
+// Signup: prevent automated account creation / email flooding.
+export const signupLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message,
+});
+
+// Refresh runs often (every ~15 min per active client), so allow a higher ceiling
+// while still blocking abuse.
+export const refreshLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message,
+});

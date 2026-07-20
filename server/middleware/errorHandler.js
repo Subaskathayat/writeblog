@@ -1,3 +1,5 @@
+import logger from '../config/logger.js';
+
 export const notFound = (req, res, next) => {
   res.status(404).json({ message: `Route not found: ${req.originalUrl}` });
 };
@@ -19,6 +21,13 @@ export const errorHandler = (err, req, res, next) => {
     status = 400;
     message = `Invalid ${err.path}: ${err.value}`;
   }
+
+  // Log errors separately from request logs; include stack for 5xx.
+  logger.error(
+    `${req.method} ${req.originalUrl} ${status} - ${message}${
+      status >= 500 && err.stack ? `\n${err.stack}` : ''
+    }`
+  );
 
   res.status(status).json({ message });
 };
